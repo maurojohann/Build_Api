@@ -1,38 +1,41 @@
-const express = require('express')
-const app = express()
-const axios = require('axios').default
+const express = require('express');
+const app = express();
+const axios = require('axios').default;
 
-app.get('/:name', async (req, res) => {
+app.get('/', async (req, res) => {
+  const  response = await axios(
+    'https://jsonmock.hackerrank.com/api/movies/search/?Title=' + req.query.name
+  );
+  var moviesByYearsResult = [];
 
-    const response = await axios('https://jsonmock.hackerrank.com/api/movies/search/?Title=' + req.params.name)
-    var films = []
-    var current
-    for (let index = response.data["page"]; index <= response.data['total_pages']; index++) {
+  for (let index = response.data['page']; index <= response.data['total_pages']; index++) {
+    await axios(
+      'https://jsonmock.hackerrank.com/api/movies/search/?Title=' + req.query.name + '&page=' + index
+    ).then(function (response) {
+      response.data.data.map((m) => moviesByYearsResult.push(m.Year));
+    });
+  }
 
-        await axios('https://jsonmock.hackerrank.com/api/movies/search/?Title=' + req.params.name +'&page=' + index).then(function (respon){
-          //films.push(respon.data.data.map(m => m.concat(m.Year)))
-          respon.data.data.map(m => films.push(m.Year))
-                 
-        })
-        
-    }
+  moviesByYear = { moviesByYear: [] };
 
-    
-    groupByYears = films.reduce((groups, item) => {
-      const group = (groups[item] || [])
-      group.push(item)
-      console.log('groups[item] ' + groups[item])
-      console.log('group ' + group)
-      groups[item] = group
-      console.log('groups[item] 2 ' + groups[item])
-      console.log('groups ' + groups)
-      return groups
-    }, {})
-    
-      console.log(groupByYears)
-      
-        
-    return res.json(groupByYears)
+  agroupByYear = moviesByYearsResult.reduce((groups, year) => {
+    const group = groups[year] || [];
+    group.push(year);
+    groups[year] = group;
+    return groups;
+  }, {});
 
-})
-app.listen('55555')
+  for (var year in agroupByYear) {
+    moviesByYear.moviesByYear.push({
+      year: year,
+      movies: agroupByYear[year].length,
+    });
+   
+  }
+
+  moviesByYear.total = response.data['total'];
+  return res.json(moviesByYear);
+
+});
+
+app.listen('55555');
