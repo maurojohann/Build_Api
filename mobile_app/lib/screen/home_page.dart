@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_app/cubit/movies_cubit.dart';
 import 'package:mobile_app/models/movies.dart';
+import 'package:mobile_app/widget/movies_input_fields.dart';
 
 class HomePage extends StatelessWidget {
   @override
@@ -17,7 +18,10 @@ class HomePage extends StatelessWidget {
           } else if (state is MoviesLoading) {
             return buildLoading();
           } else if (state is MoviesLoaded) {
-            return buildMoviesLoaded(state.movies);
+            return SingleChildScrollView(
+                child: buildMoviesLoaded(context, state.movies));
+          } else if (state is MoviesError) {
+            return buildError(state.message);
           } else {
             return buildInitialInput();
           }
@@ -34,34 +38,34 @@ class HomePage extends StatelessWidget {
     return Center(child: CircularProgressIndicator());
   }
 
-  Widget buildMoviesLoaded(Movies movies) {
-    for (var item in movies.moviesByYear) {
-      print(item.year);
-    }
-
-    return Center(child: Text('${movies.moviesByYear}'));
+  Widget buildError(error) {
+    return Center(child: Text(error));
   }
-}
 
-class MoviesInputFields extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 50),
-      child: TextField(
-        onSubmitted: (value) => submitMovieName(context, value),
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: "Enter a movie",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          suffixIcon: Icon(Icons.search),
+  Widget buildMoviesLoaded(BuildContext context, Movies movies) {
+    return Column(
+      children: [
+        Padding(padding: EdgeInsets.only(top: 15)),
+        Text('Total de Filmes Encontrados: ' + movies.total.toString()),
+        Divider(),
+        Container(
+          height: MediaQuery.of(context).size.height - 215,
+          child: ListView.builder(
+            itemCount: movies.moviesByYear.length,
+            itemBuilder: (context, index) {
+              var year = movies.moviesByYear.map((e) => e.year).toList();
+              var cont = movies.moviesByYear.map((e) => e.movies).toList();
+              return ListTile(
+                leading: Text(year[index]),
+                title: Text('Encontrados:'),
+                subtitle: Text(cont[index].toString()),
+              );
+            },
+          ),
         ),
-      ),
+        Divider(),
+        MoviesInputFields(),
+      ],
     );
-  }
-
-  submitMovieName(BuildContext context, String movieName) {
-    final moviesCubit = context.read<MoviesCubit>();
-    moviesCubit.getMovies(movieName);
   }
 }

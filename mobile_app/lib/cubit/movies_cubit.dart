@@ -17,8 +17,8 @@ class MoviesCubit extends Cubit<MoviesState> {
       var jsonResponse = convert.jsonDecode(response.body);
       final _movies = Movies.fromJson(jsonResponse as Map);
       emit(MoviesLoaded(_movies));
-    } on Exception {
-      emit(MoviesError('erro ao carregar json'));
+    } catch (e) {
+      emit(MoviesError(e.toString()));
     }
   }
 }
